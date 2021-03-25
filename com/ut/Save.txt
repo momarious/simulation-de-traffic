@@ -1,0 +1,51 @@
+package com.ut;
+
+import com.ut.Segment;
+import com.ut.Vehicle;
+
+public class Manager extends Thread {
+
+	private Segment segment;
+
+	public Manager(Segment segment) { 
+		this.segment = segment;
+	}
+
+	public synchronized void acceder(Vehicle v) {
+		System.out.println(v + "is connected.");
+		while (!segment.estLibre() && v.getDirection() != segment.trafficDirection()) {
+			try {
+				System.out.println("v" + v.getId() + " est en attente active");
+				wait();
+			} catch (Exception e) {
+			}
+		}
+		segment.setTrafficDirection(v.getDirection());
+		segment.addVehicle(v);
+		segment.occuper();
+		v.setRoute(segment);
+		System.out.println(v + " occupe la ressource pour " + v.getTime() + "s");
+	}
+
+	public synchronized void liberer(Vehicle v) {
+		segment.liberer();
+		methodo(v);
+		System.out.println("v" + v.getId() + " libere la ressource");
+
+		if (segment.trafficSize() == 0) {
+			notifyAll();
+		}
+	}
+
+	public void methodo(Vehicle v) {
+		Vehicle head = segment.getVehicule(0);
+		if (head.getId() != v.getId()) {
+			try {
+				Vehicle.sleep(head.getTime() * 1000);
+			} catch (InterruptedException e) {
+			}
+		}
+		segment.removeVehicle(0);
+	}
+
+}
